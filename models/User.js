@@ -20,6 +20,13 @@ const userSchema = new Schema({
     required: 'Please supply a name',
     trim: true
   },
+  resetPasswordToken: String,
+  resetPasswordExpires: Date
+});
+
+userSchema.virtual('gravatar').get(function(){
+  const hash = md5(this.email);
+  return `https://gravatar.com/avatar/${hash}?s=200`;
 });
 
 // Exposes a register method, that take care of the low level registration work
