@@ -71,6 +71,12 @@ exports.getStores = async (req, res) => {
   res.render('stores', { title: 'Stores', stores });
 };
 
+exports.getStoreBySlug = async (req, res, next) => {
+  const store = await Store.findOne({ slug: req.params.slug });
+  if(!store) return next(); // To the notFound middleware
+  res.render('store', { title: store.name, store });
+}
+
 exports.editStore = async (req, res) => {
   const store = await Store.findOne({ _id: req.params.id });
   // res.json(store);
@@ -89,4 +95,16 @@ exports.updateStore = async (req, res) => {
   req.flash('success', 
   `Succesfully updated <strong>${store.name}</strong>.<a href="/stores/${store.slug}">View store</a>`);
   res.redirect(`/stores/${store._id}/edit`);
+}
+
+exports.getStoresByTag = async (req, res) => {
+  // const tags = await Store.getTagsList();
+  const tag = req.params.tag;
+  const tagQuery = tag || { $exists: true }; // at least one tag on it
+  // Multiple independent queries
+  const tagsPromise = Store.getTagsList();
+  const storesPromise = Store.find({ tags:  tagQuery });
+  // Wait for multiple promises for come back, the first one to finish
+  const [tags, stores] = await Promise.all([tagsPromise, storesPromise]);
+  res.render('tag', { tags, title: 'Tags', tag, stores } );
 }
