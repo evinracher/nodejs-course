@@ -40,7 +40,18 @@ const storeSchema = new mongoose.Schema({
   }
 });
 
+// Define our indexes
+storeSchema.index({
+  name: 'text',
+  description: 'text'
+});
+
+storeSchema.index({
+  location: '2dsphere'
+});
+
 storeSchema.pre('save', async function(next) {
+  // you can clean this to don't have html
   if(!this.isModified('name')){
     next();// Skip it 
     return;// Stop this function

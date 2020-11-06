@@ -11,7 +11,7 @@ const multerOptions = {
   // The file is allow or not
   fileFilter(req, file, next) {
     const isPhoto = file.mimetype.startsWith('image/');
-    if(isPhoto) {
+    if (isPhoto) {
       next(null, true);
     } else {
       next({ message: 'That file isn\'t allowed!' }, false);
@@ -22,7 +22,7 @@ const multerOptions = {
 exports.upload = multer(multerOptions).single('photo');
 
 exports.resize = async (req, res, next) => {
-  if(!req.file) {
+  if (!req.file) {
     next(); // If there is not a file, skip to next middleware
     return;
   }
@@ -39,7 +39,7 @@ exports.resize = async (req, res, next) => {
 
 exports.myMiddleWare = (req, res, next) => {
   req.name = 'No error';
-  if(req.name === 'error'){
+  if (req.name === 'error') {
     throw Error('Error name');
   }
   next();
@@ -51,7 +51,7 @@ exports.homePage = (req, res) => {
 };
 
 exports.addStore = (req, res) => {
-  res.render('editStore', {title: 'Add store'});
+  res.render('editStore', { title: 'Add store' });
 };
 
 exports.createStore = async (req, res) => {
@@ -74,13 +74,13 @@ exports.getStores = async (req, res) => {
 
 exports.getStoreBySlug = async (req, res, next) => {
   const store = await Store.findOne({ slug: req.params.slug })
-  .populate('author'); // password is not visible
-  if(!store) return next(); // To the notFound middleware
+    .populate('author'); // password is not visible
+  if (!store) return next(); // To the notFound middleware
   res.render('store', { title: store.name, store });
 };
 
 const confirmOwner = (store, user) => {
-  if(!store.author.equals(user._id)) {
+  if (!store.author.equals(user._id)) {
     throw Error('You must own a store in order to edit it!');
   }
 };
@@ -100,8 +100,8 @@ exports.updateStore = async (req, res) => {
     new: true, // return the new store instead of the old one
     runValidators: true
   }).exec();
-  req.flash('success', 
-  `Succesfully updated <strong>${store.name}</strong>.<a href="/stores/${store.slug}">View store</a>`);
+  req.flash('success',
+    `Succesfully updated <strong>${store.name}</strong>.<a href="/stores/${store.slug}">View store</a>`);
   res.redirect(`/stores/${store._id}/edit`);
 }
 
@@ -111,8 +111,57 @@ exports.getStoresByTag = async (req, res) => {
   const tagQuery = tag || { $exists: true }; // at least one tag on it
   // Multiple independent queries
   const tagsPromise = Store.getTagsList();
-  const storesPromise = Store.find({ tags:  tagQuery });
+  const storesPromise = Store.find({ tags: tagQuery });
   // Wait for multiple promises for come back, the first one to finish
   const [tags, stores] = await Promise.all([tagsPromise, storesPromise]);
-  res.render('tag', { tags, title: 'Tags', tag, stores } );
+  res.render('tag', { tags, title: 'Tags', tag, stores });
 }
+
+exports.searchStores = async (req, res) => {
+  const stores = await Store
+  // first find stores that match
+    .find(
+      {
+        $text: {
+          $search: req.query.q
+        }
+      },
+      {
+        score: {
+          $meta: 'textScore'
+        }
+      }
+      // Then sort then
+    ).sort({
+      score: {
+        $meta: 'textScore'
+      }
+    })
+    // Limit to 5 result
+    .limit(5);
+  res.json(stores);
+};
+
+exports.mapStores = async (req, res) => {
+  const coordinates = [req.query.lng, req.query.lat].map(parseFloat);
+  // res.json(coordinates);
+  const q = {
+    location: {
+      $near: {
+        $geometry: {
+          type: 'Point',
+          coordinates
+        },
+        $maxDistance: 10000 // 10km, 10000m
+      }
+    }
+  };
+
+  const stores = await Store.find(q).select('slug name description location photo').limit(10);
+  // .select('-photo');
+  res.json(stores);
+};
+
+exports.mapPage = (req, res) => {
+  res.render('map', { title: 'Map' });
+};
