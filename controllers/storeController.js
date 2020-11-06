@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Store = mongoose.model('Store');
+const User = mongoose.model('User');
 const multer = require('multer');
 const jimp = require('jimp');
 const uuid = require('uuid');
@@ -119,7 +120,7 @@ exports.getStoresByTag = async (req, res) => {
 
 exports.searchStores = async (req, res) => {
   const stores = await Store
-  // first find stores that match
+    // first find stores that match
     .find(
       {
         $text: {
@@ -164,4 +165,27 @@ exports.mapStores = async (req, res) => {
 
 exports.mapPage = (req, res) => {
   res.render('map', { title: 'Map' });
+};
+
+exports.heartStore = async (req, res) => {
+  const hearts = req.user.hearts.map(obj => obj.toString());
+  console.log(hearts);
+  console.log(req.params.id);
+  const operator = hearts.includes(req.params.id) ? '$pull' : '$addToSet';
+  console.log(operator);
+  const user = await User
+    .findByIdAndUpdate(
+      req.user._id,
+      { [operator]: { hearts: req.params.id }},
+      { new: true }
+    );
+    res.json(user);
+};
+
+exports.getHearts = async (req, res) => {
+  // We can also do this with populate
+  const stores = await Store.find({
+    _id: { $in: req.user.hearts }
+  });
+  res.render('stores', { title: 'Hearted Stores', stores });
 };

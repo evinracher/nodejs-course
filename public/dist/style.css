@@ -922,6 +922,8 @@ label {
     fill: red; }
   .heart__button--float:after {
     animation: fly 2.5s 1 ease-out; }
+  .heart__button:hover {
+    cursor: pointer; }
 
 @keyframes fly {
   0% {

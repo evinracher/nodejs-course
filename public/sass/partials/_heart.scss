@@ -25,6 +25,9 @@
         animation: fly 2.5s 1 ease-out;
       }
     }
+    &:hover {
+      cursor: pointer;
+    }
   }
 }
 
