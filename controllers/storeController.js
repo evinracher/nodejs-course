@@ -75,7 +75,7 @@ exports.getStores = async (req, res) => {
 
 exports.getStoreBySlug = async (req, res, next) => {
   const store = await Store.findOne({ slug: req.params.slug })
-    .populate('author'); // password is not visible
+    .populate('author reviews'); // password is not visible
   if (!store) return next(); // To the notFound middleware
   res.render('store', { title: store.name, store });
 };
