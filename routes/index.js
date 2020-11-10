@@ -22,6 +22,7 @@ const { catchErrors } = require('../handlers/errorHandlers');
 // router.get('/', storeController.myMiddleWare, storeController.homePage);
 router.get('/', catchErrors(storeController.getStores));
 router.get('/stores', catchErrors(storeController.getStores));
+router.get('/stores/page/:page', catchErrors(storeController.getStores));
 router.get('/store/:slug', catchErrors(storeController.getStoreBySlug));
 router.get('/add', 
   authController.isLoggedIn,
@@ -73,7 +74,7 @@ router.post('/account/reset/:token',
 );
 router.get('/map', storeController.mapPage);
 router.get('/hearts', authController.isLoggedIn, catchErrors(storeController.getHearts));
-
+router.get('/top', catchErrors(storeController.getTopStores));
 /**
  * API
  */

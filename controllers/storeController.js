@@ -68,9 +68,32 @@ exports.createStore = async (req, res) => {
 };
 
 exports.getStores = async (req, res) => {
-  const stores = await Store.find();
+  const page = req.params.page || 1;
+  const limit = 4;
+  const skip = (page * limit) - limit;
+  const storesPromise = Store
+    .find()
+    .skip(skip)
+    .limit(limit)
+    .sort({ created: 'desc'});
+
+  const countPromise = Store.count();
+
+  const [stores, count] = await Promise.all([storesPromise, countPromise]);
+  // const stores = await Store
+  //   .find()
+  //   .skip(skip)
+  //   .limit(limit);
   // console.log(stores);
-  res.render('stores', { title: 'Stores', stores });
+
+  // Ceil for cases of 17/4 = 5 pages
+  const pages = Math.ceil(count / limit);
+  if (!stores.length && skip) {
+    req.flash('info', `Hey! You asked for page ${page}. But that doesn't exist. So I put you on page ${pages}`);
+    res.redirect(`/stores/page/${pages}`);
+    return;
+  }
+  res.render('stores', { title: 'Stores', stores, page, count, pages });
 };
 
 exports.getStoreBySlug = async (req, res, next) => {
@@ -176,10 +199,10 @@ exports.heartStore = async (req, res) => {
   const user = await User
     .findByIdAndUpdate(
       req.user._id,
-      { [operator]: { hearts: req.params.id }},
+      { [operator]: { hearts: req.params.id } },
       { new: true }
     );
-    res.json(user);
+  res.json(user);
 };
 
 exports.getHearts = async (req, res) => {
@@ -188,4 +211,10 @@ exports.getHearts = async (req, res) => {
     _id: { $in: req.user.hearts }
   });
   res.render('stores', { title: 'Hearted Stores', stores });
+};
+
+exports.getTopStores = async (req, res) => {
+  const stores = await Store.getTopStores();
+  // res.json(stores);
+  res.render('topStores', { stores, title: 'Top Stores' });
 };
